@@ -1,0 +1,4 @@
+        - --max-model-len=2048
+        - --gpu-memory-utilization=0.92
+        - --dtype=float16
+        - --max-num-seqs=1
