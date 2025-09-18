@@ -1,0 +1,49 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  annotations:
+    openshift.io/display-name: instructlab-2
+    serving.kserve.io/deploymentMode: RawDeployment
+  creationTimestamp: "2025-09-18T18:39:22Z"
+  finalizers:
+  - odh.inferenceservice.finalizers
+  - inferenceservice.finalizers
+  generation: 1
+  labels:
+    networking.kserve.io/visibility: exposed
+    opendatahub.io/dashboard: "true"
+  name: instructlab-2
+  namespace: instructlab
+  resourceVersion: "14387581"
+  uid: 71d6a228-21c0-4764-ba7d-a98fdb25662d
+spec:
+  predictor:
+    automountServiceAccountToken: false
+    maxReplicas: 1
+    minReplicas: 1
+    model:
+      args:
+      - --max-model-len=2048
+      - --gpu-memory-utilization=0.92
+      - --dtype=float16
+      - --max-num-seqs=1
+      modelFormat:
+        name: vLLM
+      name: ""
+      resources:
+        limits:
+          cpu: "2"
+          memory: 8Gi
+          nvidia.com/gpu: "1"
+        requests:
+          cpu: "1"
+          memory: 4Gi
+          nvidia.com/gpu: "1"
+      runtime: instructlab-2
+      storage:
+        key: instructlab-ovh
+        path: models/granite-7b-instruct
+    tolerations:
+    - effect: NoSchedule
+      key: nvidia.com/gpu
+      operator: Exists
