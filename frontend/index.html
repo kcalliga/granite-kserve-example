@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Granite vLLM Chatbox</title>
+  <style>
+    :root{--bg:#0b1220;--card:#121a2b;--muted:#9fb0d0;--fg:#e8eefc;--accent:#66d9ef;--border:#1e2a45;--user:#203c5c;--assistant:#18263f;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+    header h1{margin:0;font-size:16px}
+    header .tag{font-size:11px;padding:2px 8px;border-radius:999px;background:#0d2037;border:1px solid #29406c;color:#a4c3ff}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:14px;grid-template-columns:320px 1fr}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px}
+    .settings{padding:14px}
+    label{display:block;color:var(--muted);font-size:12px;margin:8px 0 6px}
+    input[type="text"],input[type="number"],textarea{width:100%;background:#0d1526;border:1px solid #253253;color:var(--fg);border-radius:10px;padding:10px 12px;outline:none}
+    textarea{min-height:72px;resize:vertical}
+    .btn{cursor:pointer;background:#10203a;color:var(--fg);border:1px solid #29406c;border-radius:10px;padding:9px 12px;font-weight:600}
+    .btn:hover{background:#132648}
+    .btn.primary{background:#183a57;border-color:#245c8c}
+    .btn.danger{background:#3a1820;border-color:#8c2439}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .muted{color:var(--muted);font-size:12px}
+
+    .chat{display:flex;flex-direction:column;height:72vh}
+    .messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:820px;padding:10px 12px;border-radius:12px;border:1px solid var(--border)}
+    .msg.user{align-self:flex-end;background:var(--user)}
+    .msg.assistant{align-self:flex-start;background:var(--assistant)}
+    .msg .role{font-size:11px;color:#b6c8f3;margin-bottom:6px;opacity:.9}
+    .inputbar{padding:12px;border-top:1px solid var(--border)}
+    .inputbar textarea{min-height:64px}
+    .right{margin-left:auto}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:#0d1526;border:1px solid #253253;border-radius:6px;padding:2px 6px;color:#c6d2f3}
+    .status{padding:8px 12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+
+    /* Markdown basics */
+    .msg .content p{margin:0 0 .6em}
+    .msg .content code{background:#0d1526;border:1px solid #253253;padding:2px 5px;border-radius:6px}
+    .msg .content pre{background:#0a0f1b;border:1px solid #1b2744;padding:10px;border-radius:10px;overflow:auto}
+    .msg .content pre code{background:transparent;border:none;padding:0}
+    .top-note{padding:8px 12px}
+  </style>
+  <!-- Optional Markdown renderer; if blocked, we'll fall back to plain text -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" integrity="sha256-+QWn1oQK6aQ6Xr6k0g6lVpKDYG+5XzVZ8oYhN8o9Kp8=" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <h1>Granite vLLM Chatbox</h1>
+    <span class="tag">OpenAI-compatible</span>
+  </header>
+
+  <div class="wrap">
+    <!-- Settings -->
+    <div class="card settings">
+      <div class="top-note muted">Serve this file from Apache and <span class="kbd">ProxyPass /api</span> to your route to avoid CORS and to let Apache skip TLS verification upstream.</div>
+      <label>Base URL (proxy to /v1)</label>
+      <input id="baseUrl" type="text" value="/api">
+      <label>Model name</label>
+      <input id="model" type="text" value="instructlab-2">
+      <label>System prompt (optional)</label>
+      <textarea id="systemPrompt" placeholder="You are a helpful, concise assistant."></textarea>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <label>Max tokens</label>
+          <input id="maxTokens" type="number" min="1" max="8192" value="256">
+        </div>
+        <div style="flex:1">
+          <label>Temperature</label>
+          <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.3">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="newChat">New chat</button>
+        <button class="btn" id="copyLast">Copy last answer</button>
+      </div>
+      <div class="muted" style="margin-top:10px">If your route is unauthenticated (as you said), no API key is required. Browsers cannot "skip TLS"—use Apache reverse proxy to do that.</div>
+    </div>
+
+    <!-- Chat panel -->
+    <div class="card chat">
+      <div id="messages" class="messages"></div>
+      <div class="inputbar">
+        <label for="userInput" class="muted">Your message</label>
+        <textarea id="userInput" placeholder="Type a question, then press Enter or click Send"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" id="sendBtn">Send</button>
+          <button class="btn" id="sendStreamBtn">Send (stream)</button>
+          <button class="btn danger" id="stopBtn" disabled>Stop</button>
+          <span class="right muted" id="hint">Endpoint: <span class="kbd">/chat/completions</span></span>
+        </div>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const messagesEl = $('#messages');
+  const baseUrl = $('#baseUrl');
+  const model = $('#model');
+  const systemPrompt = $('#systemPrompt');
+  const maxTokens = $('#maxTokens');
+  const temperature = $('#temperature');
+  const userInput = $('#userInput');
+  const sendBtn = $('#sendBtn');
+  const sendStreamBtn = $('#sendStreamBtn');
+  const stopBtn = $('#stopBtn');
+  const statusEl = $('#status');
+  const copyLast = $('#copyLast');
+  const newChat = $('#newChat');
+
+  let history = []; // {role, content}
+  let abortController = null;
+
+  function md(html){
+    try{ if (window.marked) return marked.parse(html); }catch{};
+    // fallback: escape HTML, basic newlines
+    const div = document.createElement('div');
+    div.textContent = html; return div.innerHTML.replace(/\n/g,'<br>');
+  }
+  function scrollBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+  function bubble(role, content, replaceEl){
+    const el = replaceEl || document.createElement('div');
+    el.className = 'msg ' + (role === 'user' ? 'user' : 'assistant');
+    el.innerHTML = `<div class="role">${role}</div><div class="content">${md(content)}</div>`;
+    if (!replaceEl) messagesEl.appendChild(el);
+    scrollBottom();
+    return el;
+  }
+  function setBusy(b){ sendBtn.disabled = b; sendStreamBtn.disabled = b; stopBtn.disabled = !b; }
+  function buildBody(){
+    const msgs = [];
+    const sys = systemPrompt.value.trim();
+    if (sys) msgs.push({role:'system', content:sys});
+    for (const m of history) msgs.push(m);
+    return {
+      model: model.value.trim() || 'instructlab-2',
+      messages: msgs,
+      max_tokens: Number(maxTokens.value) || 256,
+      temperature: Number(temperature.value) || 0.3
+    };
+  }
+  function apiUrl(){
+    const base = (baseUrl.value || '/api').replace(/\/$/, '');
+    // Base should point to /api (proxy to /v1). Append /chat/completions here.
+    return base + '/chat/completions';
+  }
+
+  async function send(stream){
+    const content = (userInput.value || '').trim();
+    if (!content) return;
+    // push user message
+    const u = {role:'user', content}; history.push(u);
+    bubble('user', content);
+    userInput.value = '';
+
+    // placeholder assistant bubble
+    let aEl = bubble('assistant', '');
+
+    setBusy(true); statusEl.textContent = '';
+    try{
+      const body = buildBody();
+      if (stream) body.stream = true;
+      abortController = new AbortController();
+      const res = await fetch(apiUrl(), {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body), signal: abortController.signal
+      });
+      if (!stream){
+        const txt = await res.text();
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${txt}`);
+        const data = JSON.parse(txt);
+        const ans = data.choices?.[0]?.message?.content ?? '';
+        aEl = bubble('assistant', ans, aEl);
+        history.push({role:'assistant', content: ans});
+        statusEl.textContent = 'OK';
+      } else {
+        if (!res.ok || !res.body) {
+          const txt = await res.text().catch(()=> '');
+          throw new Error(`HTTP ${res.status}: ${txt}`);
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '', full='';
+        while (true){
+          const {value, done} = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, {stream:true});
+          const lines = buf.split(/\r?\n/); buf = lines.pop() || '';
+          for (const line of lines){
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]'){ aEl = bubble('assistant', full, aEl); history.push({role:'assistant', content: full}); statusEl.textContent='Done'; setBusy(false); return; }
+            try{ const obj = JSON.parse(payload); const d = obj.choices?.[0]?.delta?.content; if (typeof d === 'string'){ full += d; aEl = bubble('assistant', full, aEl);} }catch{}
+          }
+        }
+      }
+    } catch(e){
+      if (e.name === 'AbortError'){ statusEl.textContent = 'Stopped'; }
+      else { statusEl.textContent = 'Error: ' + (e.message || e); }
+    } finally{
+      setBusy(false);
+    }
+  }
+
+  sendBtn.addEventListener('click', () => send(false));
+  sendStreamBtn.addEventListener('click', () => send(true));
+  stopBtn.addEventListener('click', () => { if (abortController) abortController.abort(); });
+  newChat.addEventListener('click', () => { history = []; messagesEl.innerHTML=''; statusEl.textContent='New chat started.'; });
+  copyLast.addEventListener('click', async () => {
+    const last = [...messagesEl.querySelectorAll('.msg.assistant .content')].pop();
+    if (!last) return; const text = last.innerText || last.textContent || '';
+    try{ await navigator.clipboard.writeText(text); statusEl.textContent='Copied answer.'; }catch{ statusEl.textContent='Copy failed.'; }
+  });
+
+  // Enter to send (Shift+Enter for newline)
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(true); }
+  });
+})();
+</script>
+</body>
+</html>
