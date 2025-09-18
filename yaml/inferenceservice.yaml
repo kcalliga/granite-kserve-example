@@ -4,18 +4,11 @@ metadata:
   annotations:
     openshift.io/display-name: instructlab-2
     serving.kserve.io/deploymentMode: RawDeployment
-  creationTimestamp: "2025-09-18T18:39:22Z"
-  finalizers:
-  - odh.inferenceservice.finalizers
-  - inferenceservice.finalizers
-  generation: 1
   labels:
     networking.kserve.io/visibility: exposed
     opendatahub.io/dashboard: "true"
   name: instructlab-2
   namespace: instructlab
-  resourceVersion: "14387581"
-  uid: 71d6a228-21c0-4764-ba7d-a98fdb25662d
 spec:
   predictor:
     automountServiceAccountToken: false
