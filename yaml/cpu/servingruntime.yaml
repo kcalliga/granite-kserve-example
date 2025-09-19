@@ -19,24 +19,19 @@ spec:
     - name: kserve-container
       image: ghcr.io/ggml-org/llama.cpp:server
       args:
+        --port=8080
+        --model=/mnt/models
+        --served-model-name={{.Name}}                                       
+      command:
         - "llama-server"
-        - "-m"
-        - "/mnt/models/granite-7b-lab-Q4_K_M.gguf"   # <— exact GGUF filename under /mnt/models
-        - "--host"
-        - "0.0.0.0"
-        - "--port"
-        - "8080"
-        - "--ctx-size"
-        - "2048"                                      # raise if you have RAM to spare
-        - "-t"
-        - "24"                                        # try 20/24/28 on i9-14900; keep fastest
+        - "-m"        
       ports:
         - name: http1
           containerPort: 8080
       resources:
         requests:
-          cpu: "8"
-          memory: 8Gi
+          cpu: "2"
+          memory: 4Gi
         limits:
-          cpu: "24"
-          memory: 32Gi
+          cpu: "4"
+          memory: 8Gi
