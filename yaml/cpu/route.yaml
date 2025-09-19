@@ -4,7 +4,7 @@ metadata:
   name: chatbot
   namespace: instructlab
 spec:
-  host: chatbot.apps.rhoai.ocp-poc-demo.com
+  host: chatbot.apps.<yourfqdn>
   to:
     kind: Service
     name: granite-gguf-cpu-predictor
