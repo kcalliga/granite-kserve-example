@@ -22,9 +22,6 @@ spec:
         - --port=8080
         - --model=/mnt/models
         - --served-model-name={{.Name}}                                       
-      command:
-        - "llama-clir"
-        - "-m"        
       ports:
         - name: http1
           containerPort: 8080
