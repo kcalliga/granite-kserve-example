@@ -1,4 +1,4 @@
-# InferenceService (points to your GGUF object)
+ InferenceService (points to your GGUF object)
 apiVersion: serving.kserve.io/v1beta1
 kind: InferenceService
 metadata:
@@ -14,6 +14,9 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
+      args:
+        - -m
+        - /mnt/models/granite-7b-lab-Q4_K_M.gguf
       modelFormat:
         name: gguf
       runtime: llama-cpp-cpu
@@ -27,5 +30,3 @@ spec:
       storage:
         key: minio-instructlab # <- your Data Connection key
         path: models/granite-7b-instruct/granite-7b-lab-Q4_K_M.gguf # <- object name; lands under /mnt/models/
-        
-
