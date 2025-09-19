@@ -19,9 +19,10 @@ spec:
     - name: kserve-container
       image: ghcr.io/ggml-org/llama.cpp:server
       args:
-        - --model=/mnt/models
+        - -m
+        - --/mnt/models
         - --port=8080
-        - --served-model-name={{.Name}}                                       
+        - --served-model-name={{.Name}}
       ports:
         - name: http1
           containerPort: 8080
