@@ -9,7 +9,6 @@ metadata:
     networking.kserve.io/visibility: exposed
 spec:
   predictor:
-    serviceAccountName: s3-sa             # <- SA with your S3/MinIO secret
     minReplicas: 1
     maxReplicas: 1
     model:
@@ -18,11 +17,11 @@ spec:
       runtime: llama-cpp-cpu
       resources:
         requests:
-          cpu: "8"
-          memory: 8Gi
+          cpu: "2"
+          memory: 4Gi
         limits:
-          cpu: "24"
-          memory: 32Gi
+          cpu: "4"
+          memory: 8Gi
       storage:
         key: instructlab-idrive           # <- your Data Connection key
         path: models/granite-7b-lab/granite-7b-lab-Q4_K_M.gguf   # <- object name; lands under /mnt/models/
