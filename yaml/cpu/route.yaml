@@ -1,0 +1,16 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: chatbot
+  namespace: instructlab
+spec:
+  host: chatbot.apps.rhoai.ocp-poc-demo.com
+  to:
+    kind: Service
+    name: granite-gguf-cpu-predictor
+    weight: 100
+  port:
+    targetPort: http1
+  tls:
+    termination: edge
+  wildcardPolicy: None
