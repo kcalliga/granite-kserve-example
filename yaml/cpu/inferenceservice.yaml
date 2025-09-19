@@ -23,5 +23,7 @@ spec:
           cpu: "4"
           memory: 8Gi
       storage:
-        key: instructlab-idrive           # <- your Data Connection key
-        path: models/granite-7b-lab/granite-7b-lab-Q4_K_M.gguf   # <- object name; lands under /mnt/models/
+        key: minio-instructlab # <- your Data Connection key
+        path: models/granite-7b-instruct/granite-7b-lab-Q4_K_M.gguf # <- object name; lands under /mnt/models/
+        
+
