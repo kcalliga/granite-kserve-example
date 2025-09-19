@@ -1,0 +1,16 @@
+# 1) Get llama.cpp + deps
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+pip install -r requirements.txt           # includes transformers, sentencepiece, etc.
+
+# 2) Convert Granite HF -> unquantized GGUF (FP16)
+#    (Set HF token if needed: export HUGGING_FACE_HUB_TOKEN=hf_xxx)
+python convert-hf-to-gguf.py ibm-granite/granite-7b-instruct \
+  --outfile granite-7b-f16.gguf
+
+# 3) Build quantize tool and make a smaller, faster file (Q4_K_M is a good CPU trade-off)
+make -j
+./quantize granite-7b-f16.gguf granite-7b-Q4_K_M.gguf Q4_K_M
+
+# 4) Upload to your bucket (adjust bucket/prefix)
+aws s3 cp granite-7b-Q4_K_M.gguf s3://instructlab/model/granite-7b-Q4_K_M.gguf
