@@ -1,0 +1,28 @@
+# InferenceService (points to your GGUF object)
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: granite-gguf-cpu
+  namespace: instructlab
+  labels:
+    opendatahub.io/dashboard: "true"
+    networking.kserve.io/visibility: exposed
+spec:
+  predictor:
+    serviceAccountName: s3-sa             # <- SA with your S3/MinIO secret
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      modelFormat:
+        name: gguf
+      runtime: llama-cpp-cpu
+      resources:
+        requests:
+          cpu: "8"
+          memory: 8Gi
+        limits:
+          cpu: "24"
+          memory: 32Gi
+      storage:
+        key: instructlab-idrive           # <- your Data Connection key
+        path: model/granite-7b-lab-Q4_K_M.gguf   # <- object name; lands under /mnt/models/
