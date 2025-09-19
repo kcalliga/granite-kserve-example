@@ -23,7 +23,7 @@ spec:
         - --model=/mnt/models
         - --served-model-name={{.Name}}                                       
       command:
-        - "llama-server"
+        - "llama-clir"
         - "-m"        
       ports:
         - name: http1
