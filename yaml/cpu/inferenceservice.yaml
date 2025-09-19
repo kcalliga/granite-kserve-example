@@ -25,4 +25,4 @@ spec:
           memory: 32Gi
       storage:
         key: instructlab-idrive           # <- your Data Connection key
-        path: model/granite-7b-lab-Q4_K_M.gguf   # <- object name; lands under /mnt/models/
+        path: models/granite-7b-lab/granite-7b-lab-Q4_K_M.gguf   # <- object name; lands under /mnt/models/
